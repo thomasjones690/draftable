@@ -11,7 +11,7 @@ import { calculateScore } from '../utils/calculateScore';
 interface Props {
   teams: Team[];
   players: Player[];
-  setPlayers: (players: Player[]) => void;
+  setPlayers: React.Dispatch<React.SetStateAction<Player[]>>;
   timerDuration: number;
 }
 
@@ -82,7 +82,7 @@ export const DraftPage: React.FC<Props> = ({ teams, players, setPlayers }) => {
     const score = calculateScore(playerToAdd);
     playerToAdd.probability = parseFloat(calculateDraftProbability(score));
 
-    setPlayers(prevPlayers => {
+    setPlayers((prevPlayers: Player[]) => {
       const updatedPlayers = [...prevPlayers, playerToAdd]
         .sort((a, b) => parseFloat(calculateScore(b)) - parseFloat(calculateScore(a)))
         .map((player, index) => ({ ...player, rank: index + 1 }));
@@ -102,7 +102,7 @@ export const DraftPage: React.FC<Props> = ({ teams, players, setPlayers }) => {
   };
 
   const markAsDrafted = (playerId: number, teamName: string) => {
-    setPlayers(prevPlayers => {
+    setPlayers((prevPlayers: Player[]) => {
       const updatedPlayers = prevPlayers.map(player => 
         player.id === playerId 
           ? { 

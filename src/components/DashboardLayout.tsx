@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { DarkModeToggle } from './DarkModeToggle';
 import { BackupControl } from './BackupControl';
-import { XMarkIcon, Bars3Icon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, Bars3Icon } from '@heroicons/react/24/outline';
 import { AutoBackupStatus } from './AutoBackupStatus';
 import { Player, Team } from '../types';
 import { DraftTimer } from './DraftTimer';
@@ -15,12 +15,13 @@ interface Props {
   teams: Team[];
   timerDuration: number;
   onTimerDurationChange: (duration: number) => void;
+  isTimerRunning: boolean;
+  setIsTimerRunning: (running: boolean) => void;
 }
 
-export const DashboardLayout: React.FC<Props> = ({ children, onImport, players, teams, timerDuration, onTimerDurationChange }) => {
+export const DashboardLayout: React.FC<Props> = ({ children, onImport, players, teams, timerDuration, onTimerDurationChange, isTimerRunning, setIsTimerRunning }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
   const location = useLocation();
 
   const isActivePath = (path: string) => {

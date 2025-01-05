@@ -5,22 +5,37 @@ const TEAMS_KEY = 'draft-teams';
 const BACKUP_KEY = 'draft-backup';
 const BACKUP_ROTATION_SIZE = 5;
 
-export const getPlayers = () => {
+export const getPlayers = (): Player[] => {
   const stored = localStorage.getItem(PLAYERS_KEY);
   return stored ? JSON.parse(stored) : [];
 };
 
-export const savePlayers = (players: any[]) => {
+export const savePlayers = (players: Player[]) => {
   localStorage.setItem(PLAYERS_KEY, JSON.stringify(players));
 };
 
-export const getTeams = () => {
+export const getTeams = (): Team[] => {
   const stored = localStorage.getItem(TEAMS_KEY);
   return stored ? JSON.parse(stored) : [];
 };
 
-export const saveTeams = (teams: any[]) => {
+export const saveTeams = (teams: Team[]) => {
   localStorage.setItem(TEAMS_KEY, JSON.stringify(teams));
+};
+
+export const isValidData = (players: unknown[], teams: unknown[]): boolean => {
+  return (
+    Array.isArray(players) &&
+    Array.isArray(teams) &&
+    players.every(p => 
+      typeof (p as any).id === 'number' &&
+      typeof (p as any).name === 'string'
+    ) &&
+    teams.every(t => 
+      typeof (t as any).id === 'number' &&
+      typeof (t as any).name === 'string'
+    )
+  );
 };
 
 export const tryRestoreFromBackup = (): { players: Player[], teams: Team[] } | null => {
@@ -29,26 +44,20 @@ export const tryRestoreFromBackup = (): { players: Player[], teams: Team[] } | n
     const mainBackup = localStorage.getItem(BACKUP_KEY);
     if (mainBackup) {
       const data = JSON.parse(mainBackup);
-      if (data.players && data.teams) {
-        return {
-          players: data.players,
-          teams: data.teams
-        };
+      if (isValidData(data.players, data.teams)) {
+        return data;
       }
     }
 
-    // If main backup fails, try the rotation backups from newest to oldest
+    // If main backup fails, try the rotation backups
     for (let i = BACKUP_ROTATION_SIZE - 1; i >= 0; i--) {
       const rotationBackup = localStorage.getItem(`${BACKUP_KEY}-${i}`);
       if (rotationBackup) {
         try {
           const data = JSON.parse(rotationBackup);
-          if (data.players && data.teams) {
+          if (isValidData(data.players, data.teams)) {
             console.log(`Restored from backup rotation ${i}`);
-            return {
-              players: data.players,
-              teams: data.teams
-            };
+            return data;
           }
         } catch (e) {
           console.warn(`Failed to parse backup ${i}:`, e);
@@ -62,21 +71,4 @@ export const tryRestoreFromBackup = (): { players: Player[], teams: Team[] } | n
     console.error('Failed to restore from any backup:', error);
     return null;
   }
-};
-
-// Also let's add validation to ensure the data structure is correct
-const isValidBackupData = (data: any): data is { players: Player[], teams: Team[] } => {
-  return (
-    data &&
-    Array.isArray(data.players) &&
-    Array.isArray(data.teams) &&
-    data.players.every((p: any) => 
-      typeof p.id === 'number' &&
-      typeof p.name === 'string'
-    ) &&
-    data.teams.every((t: any) => 
-      typeof t.id === 'number' &&
-      typeof t.name === 'string'
-    )
-  );
 }; 

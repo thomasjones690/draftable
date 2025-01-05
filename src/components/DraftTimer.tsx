@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 interface Props {
-  duration: number; // Duration in seconds
+  duration: number;
   isRunning: boolean;
   onTimeUp: () => void;
 }
@@ -14,10 +14,10 @@ export const DraftTimer: React.FC<Props> = ({ duration, isRunning, onTimeUp }) =
   }, [duration]);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: number;
 
     if (isRunning && timeLeft > 0) {
-      timer = setInterval(() => {
+      timer = window.setInterval(() => {
         setTimeLeft(prev => {
           if (prev <= 1) {
             clearInterval(timer);

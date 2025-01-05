@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Team, Player } from './types';
-import { getTeams, saveTeams, getPlayers, savePlayers, tryRestoreFromBackup, isValidData } from './services/storage';
+import { getTeams, saveTeams, getPlayers, savePlayers, tryRestoreFromBackup } from './services/storage';
 import { DraftPage } from './pages/Draft';
 import { TeamsPage } from './pages/Teams';
 import { DraftHistory } from './pages/DraftHistory';
@@ -107,11 +107,6 @@ function App() {
     }
   }, []);
 
-  const handleTimeUp = () => {
-    setIsTimerRunning(false);
-    // Optionally play a sound or show a notification
-  };
-
   return (
     <BrowserRouter>
       <DashboardLayout 
@@ -122,7 +117,6 @@ function App() {
         onTimerDurationChange={handleTimerDurationChange}
         isTimerRunning={isTimerRunning}
         setIsTimerRunning={setIsTimerRunning}
-        onTimeUp={handleTimeUp}
       >
         <Routes>
           <Route 

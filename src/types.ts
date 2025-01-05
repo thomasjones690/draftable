@@ -24,7 +24,7 @@ export interface NewPlayer {
 
 export interface ChartData {
   name: string;
-  score: string;
+  score: number;
   probability: number;
 }
 
