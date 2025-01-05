@@ -1,21 +1,43 @@
-# React + TypeScript + Vite
+# Basketball Draft Calculator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React application to help manage basketball player drafts. Features include:
+- Player stats tracking with customizable scoring
+- Dual pick recommendations for snake drafts
+- Player editing and removal
+- Draft status tracking
+- Dark mode support
+- Responsive design
+- Local storage persistence
 
-While this project uses React, Vite supports many popular JS frameworks. [See all the supported frameworks](https://vitejs.dev/guide/#scaffolding-your-first-vite-project).
+## Development
 
-## Deploy Your Own
+```bash
+# Install dependencies
+npm install
 
-Deploy your own Vite project with Vercel.
+# Start development server
+npm run dev
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/vercel/vercel/tree/main/examples/vite-react&template=vite-react)
-
-_Live Example: https://vite-react-example.vercel.app_
-
-### Deploying From Your Terminal
-
-You can deploy your new Vite project with a single command from your terminal using [Vercel CLI](https://vercel.com/download):
-
-```shell
-$ vercel
+# Build for production
+npm run build
 ```
+
+## Features
+
+### Player Management
+- Add players with stats (PPG, RPG, APG, FG%, Favorability Index)
+- Edit player information
+- Remove players
+- Track draft status
+
+### Draft Tools
+- Automatic score calculation
+- Next two recommended picks
+- Visual player comparison chart
+- Draft status tracking by team
+
+### User Interface
+- Responsive design for all screen sizes
+- Dark mode support
+- Intuitive player management
+- Quick-access editing via player names
