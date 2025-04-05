@@ -21,8 +21,10 @@ export const DraftBoard: React.FC<Props> = ({
   // Track selected team for each player
   const [selectedTeams, setSelectedTeams] = useState<Record<number, string>>({});
   
-  // Filter out drafted players
-  const availablePlayers = players.filter(player => !player.drafted);
+  // Filter out drafted players and those not in the current draft
+  const availablePlayers = players.filter(player => 
+    !player.drafted && player.draftId !== null
+  );
 
   const handleTeamSelect = (playerId: number, teamName: string) => {
     setSelectedTeams(prev => ({

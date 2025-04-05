@@ -320,24 +320,24 @@ export const DraftPage: React.FC<Props> = ({ teams, players, setPlayers, current
   };
 
   const removePlayer = async (playerId: number) => {
+    const playerToRemove = players.find(p => p.id === playerId);
+    if (!playerToRemove) return;
+    
     if (useSupabase) {
-      const playerToRemove = players.find(p => p.id === playerId);
-      if (playerToRemove) {
-        // Instead of deleting, mark as removed in Supabase
-        const updatedPlayer = {
-          ...playerToRemove,
-          drafted: true,
-          draftedBy: 'REMOVED'
-        };
-        
-        const result = await updateSupabasePlayer(updatedPlayer as any);
-        if (!result) {
-          console.error('Failed to mark player as removed in Supabase');
-          return;
-        }
+      // Instead of marking as REMOVED, set draftId to null to remove from current draft
+      const updatedPlayer = {
+        ...playerToRemove,
+        draftId: null,
+      };
+      
+      const result = await updateSupabasePlayer(updatedPlayer as any);
+      if (!result) {
+        console.error('Failed to remove player from draft in Supabase');
+        return;
       }
     }
     
+    // Remove from local state to update UI
     const updatedPlayers = players
       .filter(p => p.id !== playerId)
       .sort((a, b) => parseFloat(calculateScore(b as any)) - parseFloat(calculateScore(a as any)))

@@ -229,24 +229,37 @@ export const updatePlayer = async (player: Player): Promise<Player | null> => {
     apg: player.apg,
     fg: player.fg,
     fi: player.fi,
+    draftId: player.draftId
   });
+  
+  // Create update object with all fields
+  const updateData: any = {
+    name: player.name,
+    ppg: player.ppg,
+    rpg: player.rpg,
+    apg: player.apg,
+    fg: player.fg,
+    fi: player.fi,
+    probability: player.probability,
+    rank: player.rank,
+    drafted: player.drafted,
+    drafted_by: player.draftedBy,
+    drafted_at: player.draftedAt,
+    team_id: player.teamId
+  };
+  
+  // Only set draft_id if it's not null explicitly
+  // This allows us to remove players from drafts by setting draftId: null
+  if (player.draftId !== null && player.draftId !== undefined) {
+    updateData.draft_id = player.draftId;
+  } else if (player.draftId === null) {
+    // If draftId is explicitly null, set draft_id to null to remove from draft
+    updateData.draft_id = null;
+  }
   
   const { data, error } = await supabase
     .from('players')
-    .update({
-      name: player.name,
-      ppg: player.ppg,
-      rpg: player.rpg,
-      apg: player.apg,
-      fg: player.fg,
-      fi: player.fi,
-      probability: player.probability,
-      rank: player.rank,
-      drafted: player.drafted,
-      drafted_by: player.draftedBy,
-      drafted_at: player.draftedAt,
-      team_id: player.teamId
-    })
+    .update(updateData)
     .eq('id', player.id)
     .select()
     .single();
@@ -289,22 +302,32 @@ export const bulkUpdatePlayers = async (players: Player[]): Promise<boolean> => 
     const { error } = await supabase
       .from('players')
       .upsert(
-        chunk.map(player => ({
-          id: player.id,
-          name: player.name,
-          ppg: player.ppg,
-          rpg: player.rpg,
-          apg: player.apg,
-          fg: player.fg,
-          fi: player.fi,
-          probability: player.probability,
-          rank: player.rank,
-          drafted: player.drafted,
-          drafted_by: player.draftedBy,
-          drafted_at: player.draftedAt,
-          draft_id: player.draftId,
-          team_id: player.teamId
-        })),
+        chunk.map(player => {
+          const playerData: any = {
+            id: player.id,
+            name: player.name,
+            ppg: player.ppg,
+            rpg: player.rpg,
+            apg: player.apg,
+            fg: player.fg,
+            fi: player.fi,
+            probability: player.probability,
+            rank: player.rank,
+            drafted: player.drafted,
+            drafted_by: player.draftedBy,
+            drafted_at: player.draftedAt,
+            team_id: player.teamId
+          };
+          
+          // Only set draft_id if draftId is defined
+          if (player.draftId !== null && player.draftId !== undefined) {
+            playerData.draft_id = player.draftId;
+          } else if (player.draftId === null) {
+            playerData.draft_id = null;
+          }
+          
+          return playerData;
+        }),
         { onConflict: 'id' }
       );
     
