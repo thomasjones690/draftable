@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { Team, Player, Draft } from '../types';
+import { Team, Player } from '../types';
 import { AddTeamModal } from '../components/AddTeamModal';
 import { calculateScore } from '../utils/calculateScore';
 import { TeamEditModal } from '../components/TeamEditModal';
@@ -63,7 +63,7 @@ export const TeamsPage: React.FC<Props> = ({ teams, players, addTeam, removeTeam
     }
   };
 
-  const getTeamPlayers = (teamName: string, captain: string) => {
+  const getTeamPlayers = ( captain: string) => {
     return players.filter(player => player.draftedBy === captain);
   };
 
@@ -96,7 +96,7 @@ export const TeamsPage: React.FC<Props> = ({ teams, players, addTeam, removeTeam
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {teams.map(team => {
-              const teamPlayers = getTeamPlayers(team.name, team.captain);
+              const teamPlayers = getTeamPlayers(team.name);
               return (
                 <div 
                   key={team.id}

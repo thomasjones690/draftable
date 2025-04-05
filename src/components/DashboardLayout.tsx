@@ -32,7 +32,6 @@ export const DashboardLayout: React.FC<Props> = ({
   onTimerDurationChange, 
   isTimerRunning, 
   setIsTimerRunning,
-  isLoading = false
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);

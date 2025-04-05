@@ -1,6 +1,15 @@
-import { Player, NewPlayer } from '../types';
 
-export const calculateScore = (player: Player | NewPlayer): string => {
+
+// Define a type that only includes the stats needed for calculation
+type PlayerStats = {
+  ppg: number;
+  rpg: number;
+  apg: number;
+  fg: number;
+  fi: number;
+};
+
+export const calculateScore = (player: PlayerStats): string => {
   // Handle null or undefined values
   if (!player) return "0.00";
 

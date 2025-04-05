@@ -8,9 +8,7 @@ import {
   updateTeam,
   deleteTeam,
   createTeam as createSupabaseTeam,
-  updatePlayer,
   bulkUpdatePlayers,
-  createPlayer as createSupabasePlayer
 } from './services/supabaseStorage';
 import { DraftPage } from './pages/Draft';
 import { TeamsPage } from './pages/Teams';

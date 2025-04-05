@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { RecommendedPick } from '../components/RecommendedPick';
 import { DraftBoard } from '../components/DraftBoard';
-import { PlayerChart } from '../components/PlayerChart';
 import { getPlayers, savePlayers } from '../services/storage';
 import { Player, NewPlayer, Team, Draft } from '../types';
 import { AddPlayerModal } from '../components/AddPlayerModal';
@@ -128,7 +127,7 @@ export const DraftPage: React.FC<Props> = ({ teams, players, setPlayers, current
         draftedBy: ""
       };
 
-      const score = calculateScore(basePlayerData);
+      const score = calculateScore(basePlayerData as any);
       const probability = parseFloat(calculateDraftProbability(score));
       
       let playerToAdd: Player;
@@ -158,7 +157,7 @@ export const DraftPage: React.FC<Props> = ({ teams, players, setPlayers, current
 
       setPlayers((prevPlayers: Player[]) => {
         const updatedPlayers = [...prevPlayers, playerToAdd]
-          .sort((a, b) => parseFloat(calculateScore(b)) - parseFloat(calculateScore(a)))
+          .sort((a, b) => parseFloat(calculateScore(b as any)) - parseFloat(calculateScore(a as any)))
           .map((player, index) => ({ ...player, rank: index + 1 }));
         
         return updatedPlayers;
@@ -200,7 +199,7 @@ export const DraftPage: React.FC<Props> = ({ teams, players, setPlayers, current
           draftedBy: ""
         };
 
-        const score = calculateScore(basePlayerData);
+        const score = calculateScore(basePlayerData as any);
         const probability = parseFloat(calculateDraftProbability(score));
 
         let playerToAdd: Player;
@@ -234,7 +233,7 @@ export const DraftPage: React.FC<Props> = ({ teams, players, setPlayers, current
       if (newPlayers.length > 0) {
         setPlayers((prevPlayers: Player[]) => {
           const updatedPlayers = [...prevPlayers, ...newPlayers]
-            .sort((a, b) => parseFloat(calculateScore(b)) - parseFloat(calculateScore(a)))
+            .sort((a, b) => parseFloat(calculateScore(b as any)) - parseFloat(calculateScore(a as any)))
             .map((player, index) => ({ ...player, rank: index + 1 }));
           
           return updatedPlayers;
@@ -284,7 +283,7 @@ export const DraftPage: React.FC<Props> = ({ teams, players, setPlayers, current
   };
 
   const updatePlayer = async (updatedPlayer: Player) => {
-    const score = calculateScore(updatedPlayer);
+    const score = calculateScore(updatedPlayer as any);
     const probability = calculateDraftProbability(score);
 
     const playerWithScore = {
@@ -293,7 +292,7 @@ export const DraftPage: React.FC<Props> = ({ teams, players, setPlayers, current
     };
 
     if (useSupabase) {
-      const result = await updateSupabasePlayer(playerWithScore);
+      const result = await updateSupabasePlayer(playerWithScore as any);
       if (!result) {
         console.error('Failed to update player in Supabase');
         return;
@@ -302,7 +301,7 @@ export const DraftPage: React.FC<Props> = ({ teams, players, setPlayers, current
 
     const updatedPlayers = players
       .map(p => p.id === playerWithScore.id ? playerWithScore : p)
-      .sort((a, b) => parseFloat(calculateScore(b)) - parseFloat(calculateScore(a)))
+      .sort((a, b) => parseFloat(calculateScore(b as any)) - parseFloat(calculateScore(a as any)))
       .map((player, index) => ({ ...player, rank: index + 1 }));
 
     setPlayers(updatedPlayers);
@@ -320,7 +319,7 @@ export const DraftPage: React.FC<Props> = ({ teams, players, setPlayers, current
           draftedBy: 'REMOVED'
         };
         
-        const result = await updateSupabasePlayer(updatedPlayer);
+        const result = await updateSupabasePlayer(updatedPlayer as any);
         if (!result) {
           console.error('Failed to mark player as removed in Supabase');
           return;
@@ -330,21 +329,21 @@ export const DraftPage: React.FC<Props> = ({ teams, players, setPlayers, current
     
     const updatedPlayers = players
       .filter(p => p.id !== playerId)
-      .sort((a, b) => parseFloat(calculateScore(b)) - parseFloat(calculateScore(a)))
+      .sort((a, b) => parseFloat(calculateScore(b as any)) - parseFloat(calculateScore(a as any)))
       .map((player, index) => ({ ...player, rank: index + 1 }));
 
     setPlayers(updatedPlayers);
     setEditingPlayer(null);
   };
 
-  const chartData = players
-    .filter(player => !player.drafted)
-    .map(player => ({
-      name: player.name,
-      score: parseFloat(calculateScore(player)),
-      probability: player.probability
-    }))
-    .sort((a, b) => b.score - a.score);
+  // const chartData = players
+  //   .filter(player => !player.drafted)
+  //   .map(player => ({
+  //     name: player.name,
+  //     score: parseFloat(calculateScore(player as any)),
+  //     probability: player.probability
+  //   }))
+  //   .sort((a, b) => b.score - a.score);
 
   const getRecommendedPicks = () => {
     const undraftedPlayers = players.filter(player => !player.drafted);
@@ -352,8 +351,8 @@ export const DraftPage: React.FC<Props> = ({ teams, players, setPlayers, current
 
     return undraftedPlayers
       .sort((a, b) => {
-        const scoreA = parseFloat(calculateScore(a));
-        const scoreB = parseFloat(calculateScore(b));
+        const scoreA = parseFloat(calculateScore(a as any));
+        const scoreB = parseFloat(calculateScore(b as any));
         const probA = a.probability;
         const probB = b.probability;
         
