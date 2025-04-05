@@ -11,6 +11,8 @@ export interface Player {
   drafted: boolean;
   draftedBy: string;
   draftedAt?: number;
+  draftId?: number;
+  teamId?: number;
 }
 
 export interface NewPlayer {
@@ -33,4 +35,14 @@ export interface Team {
   name: string;
   captain: string;
   players: Player[];
+  draftId?: number;
+}
+
+export interface Draft {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt: string;
+  teams?: Team[];
+  players?: Player[];
 } 

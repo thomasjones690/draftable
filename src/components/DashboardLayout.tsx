@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useContext } from 'react';
+import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { DarkModeToggle } from './DarkModeToggle';
 import { BackupControl } from './BackupControl';
-import { XMarkIcon, Bars3Icon } from '@heroicons/react/24/outline';
+import { XMarkIcon, Bars3Icon, ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { AutoBackupStatus } from './AutoBackupStatus';
 import { Player, Team } from '../types';
 import { DraftTimer } from './DraftTimer';
 import { DraftTimerControls } from './DraftTimerControls';
+import { DraftContext } from '../App';
+import { getDraftById } from '../services/supabaseStorage';
+import { isSupabaseConfigured } from '../services/supabase';
 
 interface Props {
   children: React.ReactNode;
@@ -17,15 +20,71 @@ interface Props {
   onTimerDurationChange: (duration: number) => void;
   isTimerRunning: boolean;
   setIsTimerRunning: (running: boolean) => void;
+  isLoading?: boolean;
 }
 
-export const DashboardLayout: React.FC<Props> = ({ children, onImport, players, teams, timerDuration, onTimerDurationChange, isTimerRunning, setIsTimerRunning }) => {
+export const DashboardLayout: React.FC<Props> = ({ 
+  children, 
+  onImport, 
+  players, 
+  teams, 
+  timerDuration, 
+  onTimerDurationChange, 
+  isTimerRunning, 
+  setIsTimerRunning,
+  isLoading = false
+}) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [resetSignal, setResetSignal] = useState<number>(0);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { draftId } = useParams<{ draftId: string }>();
+  const { currentDraft, setCurrentDraft } = useContext(DraftContext);
+
+  // Load draft details when draftId changes
+  useEffect(() => {
+    if (draftId && isSupabaseConfigured()) {
+      const fetchDraft = async () => {
+        const draft = await getDraftById(parseInt(draftId, 10));
+        if (draft) {
+          setCurrentDraft(draft);
+        } else {
+          // If draft not found, navigate back to drafts list
+          navigate('/');
+        }
+      };
+      
+      fetchDraft();
+    }
+  }, [draftId, setCurrentDraft, navigate]);
 
   const isActivePath = (path: string) => {
-    return location.pathname === path;
+    if (!draftId) return false;
+    
+    // Handle paths within a draft context
+    const draftBasePath = `/draft/${draftId}`;
+    
+    if (path === '/') {
+      return location.pathname === draftBasePath || location.pathname === `${draftBasePath}/`;
+    }
+    
+    // Remove the leading slash for comparison
+    const relativePath = path.startsWith('/') ? path.substring(1) : path;
+    return location.pathname === `${draftBasePath}/${relativePath}` || 
+           location.pathname.startsWith(`${draftBasePath}/${relativePath}/`);
+  };
+
+  const getNavPath = (path: string) => {
+    if (!draftId) return '/';
+    
+    if (path === '/') {
+      return `/draft/${draftId}/`;
+    }
+    
+    // Remove the leading slash to match the routes in App.tsx
+    const relativePath = path.startsWith('/') ? path.substring(1) : path;
+    return `/draft/${draftId}/${relativePath}`;
   };
 
   const navItems = [
@@ -36,6 +95,11 @@ export const DashboardLayout: React.FC<Props> = ({ children, onImport, players, 
 
   const handleTimeUp = () => {
     setIsTimerRunning(false);
+  };
+
+  const handleResetTimer = () => {
+    setIsTimerRunning(false);
+    setResetSignal(Date.now());
   };
 
   return (
@@ -58,9 +122,17 @@ export const DashboardLayout: React.FC<Props> = ({ children, onImport, players, 
       `}>
         {/* Logo area */}
         <div className="sticky top-0 p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-white dark:bg-gray-800 z-10">
-          <h1 className="text-xl font-bold dark:text-white">
-            Baybrook Open Draft
-          </h1>
+          <div className="flex items-center">
+            <Link 
+              to="/"
+              className="flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mr-2"
+            >
+              <ChevronLeftIcon className="h-5 w-5" />
+            </Link>
+            <h1 className="text-xl font-bold dark:text-white truncate">
+              {currentDraft ? currentDraft.name : 'Baybrook Vet Draft'}
+            </h1>
+          </div>
           <button 
             onClick={() => setSidebarOpen(false)}
             className="lg:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -75,13 +147,14 @@ export const DashboardLayout: React.FC<Props> = ({ children, onImport, players, 
             duration={timerDuration}
             isRunning={isTimerRunning}
             onTimeUp={handleTimeUp}
+            resetSignal={resetSignal}
           />
           <div className="mt-2">
             <DraftTimerControls
               isRunning={isTimerRunning}
               onStart={() => setIsTimerRunning(true)}
               onPause={() => setIsTimerRunning(false)}
-              onReset={() => setIsTimerRunning(false)}
+              onReset={handleResetTimer}
             />
           </div>
         </div>
@@ -92,7 +165,7 @@ export const DashboardLayout: React.FC<Props> = ({ children, onImport, players, 
             {navItems.map(({ path, label }) => (
               <li key={path}>
                 <Link
-                  to={path}
+                  to={getNavPath(path)}
                   onClick={() => setSidebarOpen(false)}
                   className={`block px-4 py-2 text-sm transition-colors ${
                     isActivePath(path)
@@ -161,13 +234,16 @@ export const DashboardLayout: React.FC<Props> = ({ children, onImport, players, 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-h-screen lg:ml-64 relative">
         {/* Mobile header */}
-        <div className="lg:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+        <div className="lg:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center">
           <button
             onClick={() => setSidebarOpen(true)}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
           >
             <Bars3Icon className="h-6 w-6" />
           </button>
+          <h1 className="text-lg font-semibold dark:text-white truncate">
+            {currentDraft ? currentDraft.name : 'Baybrook Vet Draft'}
+          </h1>
         </div>
 
         {/* Page content */}

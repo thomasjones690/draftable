@@ -1,78 +1,184 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { Team, Player } from './types';
-import { getTeams, saveTeams, getPlayers, savePlayers, tryRestoreFromBackup } from './services/storage';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect, createContext } from 'react';
+import { Team, Player, Draft } from './types';
+import { getTeams, saveTeams, getPlayers, savePlayers } from './services/storage';
+import { 
+  getTeamsByDraftId,
+  getPlayersByDraftId,
+  updateTeam,
+  deleteTeam,
+  createTeam as createSupabaseTeam,
+  updatePlayer,
+  bulkUpdatePlayers,
+  createPlayer as createSupabasePlayer
+} from './services/supabaseStorage';
 import { DraftPage } from './pages/Draft';
 import { TeamsPage } from './pages/Teams';
 import { DraftHistory } from './pages/DraftHistory';
+import { DraftsListPage } from './pages/DraftsList';
 import { DashboardLayout } from './components/DashboardLayout';
+import { isSupabaseConfigured } from './services/supabase';
+
+// Create context for current draft
+export const DraftContext = createContext<{
+  currentDraft: Draft | null;
+  setCurrentDraft: (draft: Draft | null) => void;
+}>({
+  currentDraft: null,
+  setCurrentDraft: () => {}
+});
 
 function App() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [timerDuration, setTimerDuration] = useState(60); // Default 60 seconds
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [currentDraft, setCurrentDraft] = useState<Draft | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [useSupabase, setUseSupabase] = useState(false);
 
-  // Load initial data
+  // Check if Supabase is configured
   useEffect(() => {
-    const loadedTeams = getTeams();
-    const loadedPlayers = getPlayers();
-
-    // Try to restore from backup if:
-    // 1. We have no data, or
-    // 2. The data appears to be corrupted
-    if (
-      loadedPlayers.length === 0 && loadedTeams.length === 0 ||
-      !isValidData(loadedPlayers, loadedTeams)
-    ) {
-      const backup = tryRestoreFromBackup();
-      if (backup) {
-        console.log('Restored data from backup');
-        setTeams(backup.teams);
-        setPlayers(backup.players);
-        // Save the restored data to localStorage
-        saveTeams(backup.teams);
-        savePlayers(backup.players);
-        return;
-      }
-    }
-
-    setTeams(loadedTeams);
-    setPlayers(loadedPlayers);
+    setUseSupabase(isSupabaseConfigured());
   }, []);
+
+  // Load data based on current draft
+  useEffect(() => {
+    const loadData = async () => {
+      if (currentDraft && useSupabase) {
+        setIsLoading(true);
+        try {
+          const [loadedTeams, loadedPlayers] = await Promise.all([
+            getTeamsByDraftId(currentDraft.id),
+            getPlayersByDraftId(currentDraft.id)
+          ]);
+          setTeams(loadedTeams);
+          setPlayers(loadedPlayers);
+        } catch (error) {
+          console.error('Error loading data from Supabase:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (!useSupabase) {
+        // Fallback to local storage when Supabase is not configured
+        const loadedTeams = getTeams();
+        const loadedPlayers = getPlayers();
+        
+        if (isValidData(loadedPlayers, loadedTeams)) {
+          setTeams(loadedTeams);
+          setPlayers(loadedPlayers);
+        }
+      }
+    };
+
+    loadData();
+  }, [currentDraft, useSupabase]);
 
   // Save teams changes
   useEffect(() => {
-    saveTeams(teams);
-  }, [teams]);
+    if (!currentDraft || isLoading) return;
+
+    if (useSupabase) {
+      // We handle saving teams individually in the addTeam, updateTeam, removeTeam functions
+    } else {
+      saveTeams(teams);
+    }
+  }, [teams, currentDraft, isLoading, useSupabase]);
 
   // Save players changes
   useEffect(() => {
-    savePlayers(players);
-  }, [players]);
+    if (!currentDraft || isLoading) return;
 
-  const addTeam = (newTeam: Omit<Team, 'id' | 'players'>) => {
-    const teamToAdd: Team = {
-      id: Date.now(),
-      ...newTeam,
-      players: []
-    };
-    setTeams([...teams, teamToAdd]);
+    if (useSupabase) {
+      const savePlayersToSupabase = async () => {
+        await bulkUpdatePlayers(players);
+      };
+      savePlayersToSupabase();
+    } else {
+      savePlayers(players);
+    }
+  }, [players, currentDraft, isLoading, useSupabase]);
+
+  const addTeam = async (newTeam: Omit<Team, 'id' | 'players'>) => {
+    if (useSupabase && currentDraft) {
+      const teamToAdd = {
+        ...newTeam,
+        draftId: currentDraft.id
+      };
+      
+      const createdTeam = await createSupabaseTeam(teamToAdd);
+      if (createdTeam) {
+        setTeams([...teams, createdTeam]);
+      }
+    } else {
+      const teamToAdd: Team = {
+        id: Date.now(),
+        ...newTeam,
+        players: []
+      };
+      setTeams([...teams, teamToAdd]);
+    }
   };
 
-  const removeTeam = (teamId: number) => {
-    setTeams(teams.filter(team => team.id !== teamId));
+  const removeTeam = async (teamId: number) => {
+    if (useSupabase) {
+      const success = await deleteTeam(teamId);
+      if (success) {
+        setTeams(teams.filter(team => team.id !== teamId));
+      }
+    } else {
+      setTeams(teams.filter(team => team.id !== teamId));
+    }
   };
 
   const handleImport = (data: { players: Player[], teams: Team[] }) => {
-    setTeams(data.teams);
-    setPlayers(data.players);
+    if (useSupabase && currentDraft) {
+      // Update draft ID for all imported items
+      const teamsWithDraftId = data.teams.map(team => ({
+        ...team,
+        draftId: currentDraft.id
+      }));
+      
+      const playersWithDraftId = data.players.map(player => ({
+        ...player,
+        draftId: currentDraft.id
+      }));
+      
+      setTeams(teamsWithDraftId);
+      setPlayers(playersWithDraftId);
+      
+      // Bulk save to Supabase
+      const saveImportedData = async () => {
+        await Promise.all([
+          bulkUpdatePlayers(playersWithDraftId),
+          ...teamsWithDraftId.map(team => createSupabaseTeam({
+            name: team.name,
+            captain: team.captain,
+            draftId: team.draftId
+          }))
+        ]);
+      };
+      
+      saveImportedData();
+    } else {
+      setTeams(data.teams);
+      setPlayers(data.players);
+    }
   };
 
-  const updateTeam = (updatedTeam: Team) => {
-    setTeams(teams.map(team => 
-      team.id === updatedTeam.id ? updatedTeam : team
-    ));
+  const updateTeamData = async (updatedTeam: Team) => {
+    if (useSupabase) {
+      const result = await updateTeam(updatedTeam);
+      if (result) {
+        setTeams(teams.map(team => 
+          team.id === updatedTeam.id ? result : team
+        ));
+      }
+    } else {
+      setTeams(teams.map(team => 
+        team.id === updatedTeam.id ? updatedTeam : team
+      ));
+    }
   };
 
   // Helper function to validate data structure
@@ -108,47 +214,69 @@ function App() {
   }, []);
 
   return (
-    <BrowserRouter>
-      <DashboardLayout 
-        onImport={handleImport}
-        players={players}
-        teams={teams}
-        timerDuration={timerDuration}
-        onTimerDurationChange={handleTimerDurationChange}
-        isTimerRunning={isTimerRunning}
-        setIsTimerRunning={setIsTimerRunning}
-      >
+    <DraftContext.Provider value={{ currentDraft, setCurrentDraft }}>
+      <BrowserRouter>
         <Routes>
           <Route 
             path="/" 
+            element={<DraftsListPage />} 
+          />
+          <Route
+            path="/draft/:draftId/*"
             element={
-              <DraftPage 
-                teams={teams} 
+              <DashboardLayout
+                onImport={handleImport}
                 players={players}
-                setPlayers={setPlayers}
+                teams={teams}
                 timerDuration={timerDuration}
-              />
-            } 
-          />
-          <Route 
-            path="/teams" 
-            element={
-              <TeamsPage 
-                teams={teams} 
-                players={players}
-                addTeam={addTeam} 
-                removeTeam={removeTeam}
-                updateTeam={updateTeam}
-              />
-            } 
-          />
-          <Route 
-            path="/history" 
-            element={<DraftHistory players={players} />} 
+                onTimerDurationChange={handleTimerDurationChange}
+                isTimerRunning={isTimerRunning}
+                setIsTimerRunning={setIsTimerRunning}
+                isLoading={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : (
+                  <Routes>
+                    <Route 
+                      path="/" 
+                      element={
+                        <DraftPage 
+                          teams={teams} 
+                          players={players}
+                          setPlayers={setPlayers}
+                          timerDuration={timerDuration}
+                          currentDraft={currentDraft}
+                        />
+                      } 
+                    />
+                    <Route 
+                      path="teams" 
+                      element={
+                        <TeamsPage 
+                          teams={teams} 
+                          players={players}
+                          addTeam={addTeam} 
+                          removeTeam={removeTeam}
+                          updateTeam={updateTeamData}
+                        />
+                      } 
+                    />
+                    <Route 
+                      path="history" 
+                      element={<DraftHistory players={players} />} 
+                    />
+                    <Route path="*" element={<Navigate to="." replace />} />
+                  </Routes>
+                )}
+              </DashboardLayout>
+            }
           />
         </Routes>
-      </DashboardLayout>
-    </BrowserRouter>
+      </BrowserRouter>
+    </DraftContext.Provider>
   );
 }
 

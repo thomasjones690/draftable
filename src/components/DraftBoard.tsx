@@ -129,7 +129,7 @@ export const DraftBoard: React.FC<Props> = ({
                         <option value="">Select Team</option>
                         {teams.map(team => (
                           <option key={team.id} value={team.name}>
-                            {team.name}
+                            {team.captain}
                           </option>
                         ))}
                       </select>

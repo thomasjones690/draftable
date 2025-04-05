@@ -8,6 +8,7 @@ interface Props {
   newPlayer: NewPlayer;
   setNewPlayer: (player: NewPlayer) => void;
   onAdd: () => void;
+  isLoading?: boolean;
 }
 
 export const AddPlayerModal: React.FC<Props> = ({ 
@@ -15,13 +16,16 @@ export const AddPlayerModal: React.FC<Props> = ({
   onClose, 
   newPlayer, 
   setNewPlayer,
-  onAdd 
+  onAdd,
+  isLoading = false
 }) => {
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAdd();
+    if (!isLoading) {
+      onAdd();
+    }
   };
 
   return (
@@ -34,51 +38,59 @@ export const AddPlayerModal: React.FC<Props> = ({
               label="Name"
               value={newPlayer.name}
               onChange={(value) => setNewPlayer({ ...newPlayer, name: value })}
+              disabled={isLoading}
             />
             <PlayerInput
               label="PPG"
               value={newPlayer.ppg}
               onChange={(value) => setNewPlayer({ ...newPlayer, ppg: value })}
               type="number"
+              disabled={isLoading}
             />
             <PlayerInput
               label="RPG"
               value={newPlayer.rpg}
               onChange={(value) => setNewPlayer({ ...newPlayer, rpg: value })}
               type="number"
+              disabled={isLoading}
             />
             <PlayerInput
               label="APG"
               value={newPlayer.apg}
               onChange={(value) => setNewPlayer({ ...newPlayer, apg: value })}
               type="number"
+              disabled={isLoading}
             />
             <PlayerInput
               label="FG%"
               value={newPlayer.fg}
               onChange={(value) => setNewPlayer({ ...newPlayer, fg: value })}
               type="number"
+              disabled={isLoading}
             />
             <PlayerInput
               label="FI"
               value={newPlayer.fi}
               onChange={(value) => setNewPlayer({ ...newPlayer, fi: value })}
               type="number"
+              disabled={isLoading}
             />
           </div>
           <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+              className="px-4 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white disabled:opacity-70"
+              disabled={isLoading}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-70"
+              disabled={isLoading}
             >
-              Add Player
+              {isLoading ? 'Adding...' : 'Add Player'}
             </button>
           </div>
         </form>

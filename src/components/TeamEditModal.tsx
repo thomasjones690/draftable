@@ -6,9 +6,10 @@ interface Props {
   onClose: () => void;
   team: Team | null;
   onUpdate: (team: Team) => void;
+  isLoading?: boolean;
 }
 
-export const TeamEditModal: React.FC<Props> = ({ isOpen, onClose, team, onUpdate }) => {
+export const TeamEditModal: React.FC<Props> = ({ isOpen, onClose, team, onUpdate, isLoading = false }) => {
   const [editedTeam, setEditedTeam] = useState<Team | null>(null);
 
   useEffect(() => {
@@ -21,9 +22,9 @@ export const TeamEditModal: React.FC<Props> = ({ isOpen, onClose, team, onUpdate
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (editedTeam) {
+    if (editedTeam && !isLoading) {
       onUpdate(editedTeam);
-      onClose();
+      // Let the parent component handle closing after the async operation
     }
   };
 
@@ -41,7 +42,9 @@ export const TeamEditModal: React.FC<Props> = ({ isOpen, onClose, team, onUpdate
                 type="text"
                 value={editedTeam.name}
                 onChange={(e) => setEditedTeam({ ...editedTeam, name: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600 disabled:opacity-70"
+                disabled={isLoading}
+                required
               />
             </div>
             <div>
@@ -52,7 +55,9 @@ export const TeamEditModal: React.FC<Props> = ({ isOpen, onClose, team, onUpdate
                 type="text"
                 value={editedTeam.captain}
                 onChange={(e) => setEditedTeam({ ...editedTeam, captain: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600 disabled:opacity-70"
+                disabled={isLoading}
+                required
               />
             </div>
           </div>
@@ -60,15 +65,17 @@ export const TeamEditModal: React.FC<Props> = ({ isOpen, onClose, team, onUpdate
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+              className="px-4 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white disabled:opacity-70"
+              disabled={isLoading}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-70"
+              disabled={isLoading}
             >
-              Save Changes
+              {isLoading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>

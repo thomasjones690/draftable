@@ -5,9 +5,10 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (team: Omit<Team, 'id' | 'players'>) => void;
+  isLoading?: boolean;
 }
 
-export const AddTeamModal: React.FC<Props> = ({ isOpen, onClose, onAdd }) => {
+export const AddTeamModal: React.FC<Props> = ({ isOpen, onClose, onAdd, isLoading = false }) => {
   const [teamName, setTeamName] = React.useState('');
   const [captainName, setCaptainName] = React.useState('');
 
@@ -15,16 +16,17 @@ export const AddTeamModal: React.FC<Props> = ({ isOpen, onClose, onAdd }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!teamName || !captainName) return;
+    if (!teamName || !captainName || isLoading) return;
 
     onAdd({
       name: teamName,
       captain: captainName,
     });
 
+    // We'll let the onAdd handler close the modal after the async operation completes
+    // Only reset the form fields here
     setTeamName('');
     setCaptainName('');
-    onClose();
   };
 
   return (
@@ -38,6 +40,8 @@ export const AddTeamModal: React.FC<Props> = ({ isOpen, onClose, onAdd }) => {
           <button 
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            disabled={isLoading}
+            type="button"
           >
             ✕
           </button>
@@ -45,16 +49,20 @@ export const AddTeamModal: React.FC<Props> = ({ isOpen, onClose, onAdd }) => {
         
         <div className="space-y-4">
           <input
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600 disabled:opacity-70"
             placeholder="Team Name"
             value={teamName}
             onChange={(e) => setTeamName(e.target.value)}
+            disabled={isLoading}
+            required
           />
           <input
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600 disabled:opacity-70"
             placeholder="Captain Name"
             value={captainName}
             onChange={(e) => setCaptainName(e.target.value)}
+            disabled={isLoading}
+            required
           />
         </div>
         
@@ -62,15 +70,17 @@ export const AddTeamModal: React.FC<Props> = ({ isOpen, onClose, onAdd }) => {
           <button 
             type="button"
             onClick={onClose}
-            className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white text-sm sm:text-base"
+            className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white text-sm sm:text-base disabled:opacity-70"
+            disabled={isLoading}
           >
             Cancel
           </button>
           <button 
             type="submit"
-            className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+            className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base disabled:opacity-70"
+            disabled={isLoading}
           >
-            Add Team
+            {isLoading ? 'Adding...' : 'Add Team'}
           </button>
         </div>
       </form>

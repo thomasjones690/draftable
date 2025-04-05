@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@supabase/supabase-js": "^2.49.4",
     "@types/recharts": "^1.8.29",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
