@@ -221,6 +221,16 @@ export const createPlayer = async (player: Omit<Player, 'id'>): Promise<Player |
 };
 
 export const updatePlayer = async (player: Player): Promise<Player | null> => {
+  console.log('Updating player in Supabase:', {
+    id: player.id,
+    name: player.name,
+    ppg: player.ppg,
+    rpg: player.rpg,
+    apg: player.apg,
+    fg: player.fg,
+    fi: player.fi,
+  });
+  
   const { data, error } = await supabase
     .from('players')
     .update({
@@ -245,6 +255,8 @@ export const updatePlayer = async (player: Player): Promise<Player | null> => {
     console.error(`Error updating player ${player.id}:`, error);
     return null;
   }
+  
+  console.log('Player updated successfully:', data);
   
   return {
     id: data.id,

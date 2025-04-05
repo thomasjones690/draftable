@@ -92,8 +92,8 @@ export const EditPlayerModal: React.FC<Props> = ({
               >
                 <option value="">Undrafted</option>
                 {teams.map(team => (
-                  <option key={team.id} value={team.name}>
-                    {team.name}
+                  <option key={team.id} value={team.captain}>
+                    {team.captain}
                   </option>
                 ))}
               </select>

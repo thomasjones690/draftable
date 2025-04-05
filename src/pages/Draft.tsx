@@ -283,16 +283,27 @@ export const DraftPage: React.FC<Props> = ({ teams, players, setPlayers, current
   };
 
   const updatePlayer = async (updatedPlayer: Player) => {
-    const score = calculateScore(updatedPlayer as any);
+    // Ensure numerical fields are proper numbers before calculating score
+    const cleanedPlayer = {
+      ...updatedPlayer,
+      ppg: typeof updatedPlayer.ppg === 'string' ? parseFloat(updatedPlayer.ppg) : updatedPlayer.ppg,
+      rpg: typeof updatedPlayer.rpg === 'string' ? parseFloat(updatedPlayer.rpg) : updatedPlayer.rpg,
+      apg: typeof updatedPlayer.apg === 'string' ? parseFloat(updatedPlayer.apg) : updatedPlayer.apg,
+      fg: typeof updatedPlayer.fg === 'string' ? parseFloat(updatedPlayer.fg) : updatedPlayer.fg,
+      fi: typeof updatedPlayer.fi === 'string' ? parseFloat(updatedPlayer.fi) : updatedPlayer.fi
+    };
+    
+    const score = calculateScore(cleanedPlayer as any);
     const probability = calculateDraftProbability(score);
 
     const playerWithScore = {
-      ...updatedPlayer,
+      ...cleanedPlayer,
       probability: parseFloat(probability)
     };
 
     if (useSupabase) {
-      const result = await updateSupabasePlayer(playerWithScore as any);
+      console.log('Saving player to Supabase:', playerWithScore);
+      const result = await updateSupabasePlayer(playerWithScore);
       if (!result) {
         console.error('Failed to update player in Supabase');
         return;
